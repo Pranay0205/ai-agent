@@ -1,17 +1,18 @@
 import os
 import subprocess
+from sys import stdout
 
 
 def run_python_file(working_directory, file_path, args=None):
 
     try:
-        working_directory_abs = os.path.abspath(working_directory)
+        working_dir_abs = os.path.abspath(working_directory)
 
         absolute_file_path = os.path.normpath(
-            os.path.join(working_directory, file_path))
+            os.path.join(working_dir_abs, file_path))
 
         is_file_within_scope = os.path.commonpath(
-            [absolute_file_path, working_directory_abs]) == working_directory_abs
+            [working_dir_abs, absolute_file_path]) == working_dir_abs
 
         if not is_file_within_scope:
             raise RuntimeError(
@@ -26,20 +27,26 @@ def run_python_file(working_directory, file_path, args=None):
 
         command = ["python", absolute_file_path]
 
-        command.extend([args])
+        if args is not None:
+            command.extend(args)
 
         result = subprocess.run(
-            command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-
-        if result.stderr is not None:
-            raise RuntimeError(f'Command failed to run due to {result.stderr}')
+            command, cwd=working_dir_abs, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
 
         output_text = ""
-        if result.check_returncode() == 0:
-            output_text = f"STDOUT: {result.STDOUT}"
+        if result.returncode != 0:
+            output_text = f'Process exited with code {result.returncode}\n'
+
+        if result.stdout is None and result.stderr is None:
+            output_text = f"No output produced"
+
         else:
-            output_text = f'Process exited with code {result.check_returncode()}'
+            if result.stdout is not None:
+                output_text += f'STDOUT: {result.stdout}'
 
-    except RuntimeError as e:
+            if result.stderr is not None:
+                output_text += f'STDERR: {result.stderr}'
 
-        return f"Error: {e}"
+        return output_text
+    except Exception as e:
+        return f"Error: executing Python file: {e}"
