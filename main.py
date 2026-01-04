@@ -1,11 +1,12 @@
 import argparse
 import os
+from typing_extensions import runtime
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from call_functions import available_functions
+from call_functions import available_functions, call_function
 from prompts import system_prompt
 
 
@@ -51,8 +52,21 @@ def generate_content(client, messages, verbose):
         print(response.text)
         return
 
+    function_results = []
     for function_call in response.function_calls:
-        print(f"Calling function: {function_call.name}({function_call.args})")
+        function_call_result = call_function(function_call, verbose)
+
+        if not function_call_result.parts:
+            raise RuntimeError("Function response appears to be malformed")
+
+        if not function_call_result.parts[0].function_response:
+            raise RuntimeError("Function response appears to be empty")
+
+        function_results.append(function_call_result.parts[0])
+
+        if verbose:
+            print(
+                f"-> {function_call_result.parts[0].function_response.response}")
 
 
 if __name__ == "__main__":
