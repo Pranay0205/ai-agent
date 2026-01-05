@@ -1,13 +1,14 @@
 import sys
 from google.genai import types
 from call_functions import available_functions, call_function
+from config import MODEL_NAME
 from prompts import system_prompt
 
 
 def model_invoker(client, messages, verbose):
     for _ in range(20):
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=MODEL_NAME,
             contents=messages,
             config=types.GenerateContentConfig(
                 tools=[

@@ -1,2 +1,2 @@
 MAX_CHARS = 10000
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3-flash"
